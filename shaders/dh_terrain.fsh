@@ -1,20 +1,16 @@
-#version 460
+#version 460 compatibility
 
-uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
 layout(location = 0) out vec4 outColor0;
 
-in vec2 texCoord;
-in vec3 foliageColor;
+in vec4 blockColor;
 in vec2 lightMapCoords;
 
 void main() {
     vec3 lightColor = pow(texture(lightmap, lightMapCoords).rgb, vec3(2.2));
-
-    vec4 outputColorData = pow(texture(gtexture, texCoord), vec4(2.2));
-
-    vec3 outputColor = outputColorData.rgb * pow(foliageColor, vec3(2.2)) * lightColor;
+    vec4 outputColorData = blockColor;
+    vec3 outputColor = outputColorData.rgb * lightColor;
     float transparency = outputColorData.a;
     if (transparency < .1) {
         discard;
