@@ -17,9 +17,5 @@ out vec2 texCoord;
 void main() {
     texCoord = vaUV0;
 
-    vec3 worldSpaceVertexPosition = cameraPosition + (gbufferModelViewInverse * modelViewMatrix * vec4(vaPosition + chunkOffset, 1)).xyz;
-
-    float distanceFromCamera = distance(worldSpaceVertexPosition, cameraPosition);
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset - 0.1 * distanceFromCamera, 1);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset, 1);
 }
