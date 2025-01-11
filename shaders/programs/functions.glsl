@@ -21,7 +21,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 reflectance = vec3(0);
     if (specularData.g * 255 > 229) {
         metallic = 1.0;
-        reflectance = albedo;
+        // reflectance = albedo;
     } else {
         reflectance = vec3(specularData.g);
     }
@@ -58,18 +58,22 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
     float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);
     shadowMultiplier = mix(shadowMultiplier, vec3(1.0), shadowFade);
+
+    // sun light
+    const vec3 sunLightColor = vec3(1.0);
+    vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldNormal), 0.0, 1.0) * skyLight;
     
     //ambient lighting
     vec3 ambientLightDir = worldNormal;
     vec3 blockLight = pow(texture(lightmap, vec2(lightMapCoords.x, 1.0 / 32.0)).rgb, vec3(2.2));
-    vec3 ambientLight = (blockLight + .2 * skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false);
+    vec3 ambientLight = (blockLight + skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false) * 0.3;
 
     //brdf
     vec3 outputColor;
     if (renderStage == MC_RENDER_STAGE_PARTICLES) {
         outputColor = ambientLight + skyLight * albedo;
     } else {
-        outputColor = ambientLight + skyLight * shadowMultiplier * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
+        outputColor = ambientLight + sunLight * shadowMultiplier * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
     }
 
     return outputColor;

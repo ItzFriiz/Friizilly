@@ -86,7 +86,7 @@ void main() {
     specularData.g = reflectance;
 
     //sky light
-    vec3 skyLight = pow(texture(lightmap,vec2(1.0 / 32.0,lightMapCoords.y)).rgb, vec3(2.2));
+    vec3 skyLight = pow(texture(lightmap,vec2(1.0 / 32.0, lightMapCoords.y)).rgb, vec3(2.2));
 
     //lighting
     vec3 outputColor = lightingCalculations(albedo, viewTangent.rgb, worldNormal, worldGeoNormal, skyLight, feetPlayerFrag, worldFrag);
