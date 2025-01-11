@@ -185,5 +185,6 @@ void main() {
     }
     #endif
 
+
     outColor0 = pow(vec4(outputColor, transparency), vec4(1 / 2.2));
 }
