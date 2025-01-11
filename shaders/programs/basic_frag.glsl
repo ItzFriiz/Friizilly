@@ -1,23 +1,24 @@
-#version 460
-
+//uniforms
 uniform sampler2D gtexture;
-uniform sampler2D lightmap;
 
-layout(location = 0) out vec4 outColor0;
-
+//vertexToFragment
 in vec2 texCoord;
 in vec3 foliageColor;
-in vec2 lightMapCoords;
+
+/* DRAWBUFFERS:0 */
+layout(location = 0) out vec4 outColor0; //colortex0 - outcolor
 
 void main() {
-    vec3 lightColor = pow(texture(lightmap, lightMapCoords).rgb, vec3(2.2));
 
-    vec4 outputColorData = pow(texture(gtexture, texCoord), vec4(2.2));
-
-    vec3 outputColor = outputColorData.rgb * pow(foliageColor, vec3(2.2)) * lightColor;
+    //input color
+    vec4 outputColorData = texture(gtexture, texCoord);
+    vec3 albedo = pow(outputColorData.rgb, vec3(2.2)) * pow(foliageColor, vec3(2.2));
     float transparency = outputColorData.a;
+
     if (transparency < .1) {
         discard;
     }
-    outColor0 = pow(vec4(outputColor, transparency), vec4(1 / 2.2));
+
+    //output color
+    outColor0 = vec4(pow(albedo, vec3(1 / 2.2)), transparency);
 }

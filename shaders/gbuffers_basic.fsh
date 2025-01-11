@@ -1,1 +1,1 @@
-#include "/programs/basic_frag.glsl"
+#include "/programs/lit_frag.glsl"
