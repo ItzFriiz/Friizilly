@@ -33,10 +33,6 @@ in vec2 texCoord;
 
 layout(location = 0) out vec4 outColor0;
 
-float fogify(float x, float w) {
-	return w / (x * x + w);
-}
-
 mat4 perspectiveProjection(float fov, float aspect, float near, float far) {
 	float inverseTanFovHalf = 1.0 / tan(fov/ 2);
 	
@@ -56,7 +52,7 @@ void main() {
 
     float depth = texture(depthtex0, texCoord).r;
     #ifdef DISTANT_HORIZONS
-    float dhDepth = texture(dhDepthTex0,texCoord).r;
+    float dhDepth = texture(dhDepthTex0, texCoord).r;
     #endif
 
     float fov = 2.0 * atan(1.0 / gbufferProjection[1][1]);
@@ -65,17 +61,17 @@ void main() {
     mat4 customGbufferProjection = perspectiveProjection(fov, aspectRatio, dhNearPlane, dhFarPlane);
     mat4 customGbufferProjectionInverse = inverse(customGbufferProjection);
     bool isFragDH = depth == 1.0;
-    vec3 fragScreenSpace = mix(vec3(texCoord,depth),vec3(texCoord,dhDepth),float(isFragDH));
-    vec3 fragNdcSpace = fragScreenSpace * 2.0 - 1.0;
-    vec4 fragHomogeneousSpace = mix(gbufferProjectionInverse * vec4(fragNdcSpace,1.0),customGbufferProjectionInverse * vec4(fragNdcSpace,1.0),float(isFragDH));
+    vec3 screenFrag = mix(vec3(texCoord, depth),vec3(texCoord, dhDepth), float(isFragDH));
+    vec3 ndcFrag = screenFrag * 2.0 - 1.0;
+    vec4 clipFrag = mix(gbufferProjectionInverse * vec4(ndcFrag, 1.0),customGbufferProjectionInverse * vec4(ndcFrag, 1.0), float(isFragDH));
     #else
-    vec3 fragScreenSpace = vec3(texCoord,depth);
-    vec3 fragNdcSpace = fragScreenSpace * 2.0 - 1.0;
-    vec4 fragHomogeneousSpace = gbufferProjectionInverse * vec4(fragNdcSpace,1.0);
+    vec3 screenFrag = vec3(texCoord,depth);
+    vec3 ndcFrag = screenFrag * 2.0 - 1.0;
+    vec4 clipFrag = gbufferProjectionInverse * vec4(ndcFrag, 1.0);
     #endif
-    vec3 fragViewSpace = fragHomogeneousSpace.xyz/fragHomogeneousSpace.w;
+    vec3 viewFrag = clipFrag.xyz / clipFrag.w;
 
-    float distanceFromCamera = distance(fragViewSpace, vec3(0));
+    float distanceFromCamera = distance(viewFrag, vec3(0));
 
     float maxFogDistance = 2000;
     float minFogDistance = 1500;

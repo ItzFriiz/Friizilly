@@ -66,6 +66,26 @@ vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
     return worldGeoNormal * (1. - bump) + worldNormal * bump;
 }
 
+vec3 getSunLightColor(int time) {
+    vec3 white = vec3(1.0);
+    vec3 sunriseColor = vec3(1.0, 0.5, 0.0);
+    vec3 noonColor = vec3(1.0);
+    vec3 sunsetColor = vec3(1.0, 0.5, 0.0);
+    vec3 nightColor = vec3(0.9, 0.9, 0.9);
+
+    if (time < 500) {
+        return mix(nightColor, sunriseColor, float(time) / 500.0);
+    } else if (time < 3000) {
+        return mix(sunriseColor, white, float(time - 500) / 2500.0);
+    } else if (time < 10000) {
+        return mix(white, sunsetColor, float(time - 3000) / 7000.0);
+    } else if (time < 12000) {
+        return mix(sunsetColor, nightColor, float(time - 10000) / 2000.0);
+    } else {
+        return nightColor;
+    }
+}
+
 vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 worldGeoNormal, vec3 skyLight, vec3 feetPlayerFrag, vec3 fragWorldSpace) {
     //material data
     vec4 specularData = texture(specular, texCoord);
@@ -99,20 +119,20 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     shadow = mix(shadow, vec3(1.0), shadowFade);
 
     // sun light
-    const vec3 sunLightColor = vec3(1.0);
+    vec3 sunLightColor = getSunLightColor(worldTime);
     vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldNormal), 0.0, 1.0) * skyLight;
     
     //ambient lighting
     vec3 ambientLightDir = worldNormal;
     vec3 blockLight = pow(texture(lightmap, vec2(lightMapCoords.x, 1.0 / 32.0)).rgb, vec3(2.2));
-    vec3 ambientLight = (blockLight + skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false) * 0.3;
+    vec3 ambientLight = (blockLight + skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false);
 
     //brdf
     vec3 outputColor;
     if (renderStage == MC_RENDER_STAGE_PARTICLES) {
         outputColor = ambientLight + skyLight * albedo;
     } else {
-        outputColor = ambientLight + sunLight * shadow * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
+        outputColor = ambientLight * 0.5 + 1.5 * sunLight * shadow * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
     }
 
     return outputColor;

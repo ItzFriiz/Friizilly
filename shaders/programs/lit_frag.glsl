@@ -24,6 +24,7 @@ uniform vec3 cameraPosition;
 uniform float viewHeight;
 uniform float viewWidth;
 uniform int renderStage;
+uniform int worldTime;
 
 in vec2 texCoord;
 in vec3 foliageColor;

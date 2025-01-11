@@ -25,6 +25,7 @@ uniform vec3 fogColor;
 uniform vec3 shadowLightPosition;
 uniform vec3 cameraPosition;
 uniform int renderStage;
+uniform int worldTime;
 
 //vertexToFragment
 in vec4 blockColor;
