@@ -94,7 +94,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 reflectance = vec3(0);
     if (specularData.g * 255 > 229) {
         metallic = 1.0;
-        // reflectance = albedo;
+        reflectance = albedo;
     } else {
         reflectance = vec3(specularData.g);
     }

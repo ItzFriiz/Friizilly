@@ -22,7 +22,7 @@ vec3 brdf(vec3 lightDir, vec3 viewDir, float roughness, vec3 normal, vec3 albedo
     vec3 rhoD = albedo;
     rhoD *= (vec3(1.0)- fresnelReflectance); //energy conservation - light that doesn't reflect adds to diffuse
 
-    // rhoD *= (1-metallic); //diffuse is 0 for metals
+    rhoD *= (1-metallic); //diffuse is 0 for metals
 
     // Geometric attenuation
     float k = alpha/2;
