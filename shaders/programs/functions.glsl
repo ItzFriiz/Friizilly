@@ -24,6 +24,29 @@ vec3 getShadow(vec3 shadowScreenFrag) {
     return shadow;
 }
 
+vec3 getSoftShadow(vec4 shadowClipFrag) {
+    const float range = SHADOW_SOFTNESS / 2; // how far away from the original position we take our samples from
+    const float increment = range / SHADOW_QUALITY; // distance between each sample
+
+    vec3 shadowAccum = vec3(0.0); // sum of all shadow samples
+    int samples = 0;
+
+    for(float x = -range; x <= range; x += increment) {
+        for (float y = -range; y <= range; y+= increment) {
+            vec2 offset = vec2(x, y) / shadowMapResolution; // we divide by the resolution so our offset is in terms of pixels
+            vec4 offsetShadowClipPos = shadowClipFrag + vec4(offset, 0.0, 0.0); // add offset
+            offsetShadowClipPos.z -= 0.001; // apply bias
+            offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz); // apply distortion
+            vec3 shadowNDCPos = offsetShadowClipPos.xyz / offsetShadowClipPos.w; // convert to NDC space
+            vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5; // convert to screen space
+            shadowAccum += getShadow(shadowScreenPos); // take shadow sample
+            samples++;
+        }
+    }
+
+    return shadowAccum / float(samples); // divide sum by count, getting average shadow
+}
+
 vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
     // Bump mapping from paper: Bump Mapping Unparametrized Surfaces on the GPU
     float bump = 0.4;
@@ -49,9 +72,6 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 adjustedFeetPlayerFrag = feetPlayerFrag + .03 * worldNormal;    // tiny offset to prevent shadow acne
     vec3 shadowViewFrag = (shadowModelView * vec4(adjustedFeetPlayerFrag, 1.0)).xyz;
     vec4 shadowClipFrag = shadowProjection * vec4(shadowViewFrag, 1.0);
-    shadowClipFrag.xyz = distortShadowClipPos(shadowClipFrag.xyz);
-    vec3 shadowNdcFrag = shadowClipFrag.xyz / shadowClipFrag.w;
-    vec3 shadowScreenFrag = shadowNdcFrag * 0.5 + 0.5;
 
     //directions
     vec3 shadowLightDir =  normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
@@ -59,7 +79,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 viewDir = normalize(cameraPosition - fragWorldSpace);
 
     //shadow - 0 if in shadow, 1 if it is not
-    vec3 shadow = getShadow(shadowScreenFrag);
+    vec3 shadow = getSoftShadow(shadowClipFrag);
 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
     float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);
