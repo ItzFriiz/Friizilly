@@ -31,9 +31,10 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     //space conversion
     vec3 adjustedFeetPlayerFrag = feetPlayerFrag + .03 * worldNormal;    // tiny offset to prevent shadow acne
     vec3 shadowViewFrag = (shadowModelView * vec4(adjustedFeetPlayerFrag, 1.0)).xyz;
-    vec4 homogeneousFrag = shadowProjection * vec4(shadowViewFrag, 1.0);
-    vec3 fragShadowNdcSpace = homogeneousFrag.xyz / homogeneousFrag.w;
-    vec3 shadowScreenFrag = vec3(distort(fragShadowNdcSpace.xy),fragShadowNdcSpace.z) * 0.5 + 0.5;
+    vec4 shadowClipFrag = shadowProjection * vec4(shadowViewFrag, 1.0);
+    shadowClipFrag.xyz = distortShadowClipPos(shadowClipFrag.xyz);
+    vec3 shadowNdcFrag = shadowClipFrag.xyz / shadowClipFrag.w;
+    vec3 shadowScreenFrag = shadowNdcFrag * 0.5 + 0.5;
 
     //directions
     vec3 shadowLightDir =  normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
@@ -45,19 +46,19 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
     vec3 shadowColor = pow(texture(shadowcolor0, shadowScreenFrag.xy).rgb, vec3(2.2));
 
-    vec3 shadowMultiplier = vec3(1.0);
+    vec3 shadow = vec3(1.0);
 
     if(isInShadow == 0.0) {
         if(isInNonColoredShadow == 0.0) {
-            shadowMultiplier = vec3(0.0);
+            shadow = vec3(0.0);
         } else { //if fragment is in colored shadow
-            shadowMultiplier = shadowColor;
+            shadow = shadowColor;
         }
     }
 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
     float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);
-    shadowMultiplier = mix(shadowMultiplier, vec3(1.0), shadowFade);
+    shadow = mix(shadow, vec3(1.0), shadowFade);
 
     // sun light
     const vec3 sunLightColor = vec3(1.0);
@@ -73,7 +74,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     if (renderStage == MC_RENDER_STAGE_PARTICLES) {
         outputColor = ambientLight + skyLight * albedo;
     } else {
-        outputColor = ambientLight + sunLight * shadowMultiplier * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
+        outputColor = ambientLight + sunLight * shadow * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);
     }
 
     return outputColor;

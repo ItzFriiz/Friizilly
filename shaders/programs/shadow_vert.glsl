@@ -10,5 +10,5 @@ void main() {
     foliageColor = gl_Color.rgb;
 
     gl_Position = ftransform();
-    gl_Position.xy = distort(gl_Position.xy);
+    gl_Position.xyz = distortShadowClipPos(gl_Position.xyz);
 }
