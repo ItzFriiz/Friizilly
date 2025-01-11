@@ -7,6 +7,12 @@ mat3 tbnNormalTangent(vec3 normal, vec3 tangent) {
     return mat3(tangent, bitangent, normal);
 }
 
+vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
+    // Bump mapping from paper: Bump Mapping Unparametrized Surfaces on the GPU
+    float bump = 0.4;
+    return worldGeoNormal * (1. - bump) + worldNormal * bump;
+}
+
 vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 worldGeoNormal, vec3 skyLight, vec3 feetPlayerFrag, vec3 fragWorldSpace) {
     //material data
     vec4 specularData = texture(specular, texCoord);
@@ -15,7 +21,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 reflectance = vec3(0);
     if (specularData.g * 255 > 229) {
         metallic = 1.0;
-        // reflectance = albedo;
+        reflectance = albedo;
     } else {
         reflectance = vec3(specularData.g);
     }
@@ -23,8 +29,8 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     float smoothness = 1 - roughness;
 
     //space conversion
-    vec3 adjustFeetPlayerFrag = feetPlayerFrag + worldGeoNormal * .03;
-    vec3 shadowViewFrag = (shadowModelView * vec4(adjustFeetPlayerFrag, 1.0)).xyz;
+    vec3 adjustedFeetPlayerFrag = feetPlayerFrag + .03 * worldNormal;    // tiny offset to prevent shadow acne
+    vec3 shadowViewFrag = (shadowModelView * vec4(adjustedFeetPlayerFrag, 1.0)).xyz;
     vec4 homogeneousFrag = shadowProjection * vec4(shadowViewFrag, 1.0);
     vec3 fragShadowNdcSpace = homogeneousFrag.xyz / homogeneousFrag.w;
     vec3 shadowScreenFrag = vec3(distort(fragShadowNdcSpace.xy),fragShadowNdcSpace.z) * 0.5 + 0.5;
@@ -35,7 +41,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 viewDir = normalize(cameraPosition - fragWorldSpace);
 
     //shadow - 0 if in shadow, 1 if it is not
-    float isInShadow = step(shadowScreenFrag.z - .001, texture(shadowtex0, shadowScreenFrag.xy).r); // tiny offset to prevent shadow acne
+    float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
     float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
     vec3 shadowColor = pow(texture(shadowcolor0, shadowScreenFrag.xy).rgb, vec3(2.2));
 
@@ -54,7 +60,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     shadowMultiplier = mix(shadowMultiplier, vec3(1.0), shadowFade);
     
     //ambient lighting
-    vec3 ambientLightDir = worldGeoNormal;
+    vec3 ambientLightDir = worldNormal;
     vec3 blockLight = pow(texture(lightmap, vec2(lightMapCoords.x, 1.0 / 32.0)).rgb, vec3(2.2));
     vec3 ambientLight = (blockLight + .2 * skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false);
 

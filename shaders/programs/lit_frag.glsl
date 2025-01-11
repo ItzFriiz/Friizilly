@@ -73,6 +73,7 @@ void main() {
     mat3 TBN = tbnNormalTangent(viewGeoNormal, viewSpaceTangent);
     vec3 viewNormal = TBN * normalSpaceNormal;
     vec3 worldNormal = mat3(gbufferModelViewInverse) * viewNormal;
+    worldNormal = updateWorldNormal(worldNormal, worldGeoNormal);
 
     vec3 specularData = texture(specular, texCoord).rgb;
 
