@@ -7,6 +7,23 @@ mat3 tbnNormalTangent(vec3 normal, vec3 tangent) {
     return mat3(tangent, bitangent, normal);
 }
 
+vec3 getShadow(vec3 shadowScreenFrag) {
+    float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
+    float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
+    vec3 shadowColor = pow(texture(shadowcolor0, shadowScreenFrag.xy).rgb, vec3(2.2));
+
+    vec3 shadow = vec3(1.0);
+
+    if(isInShadow == 0.0) {
+        if(isInNonColoredShadow == 0.0) {
+            shadow = vec3(0.0);
+        } else { //if fragment is in colored shadow
+            shadow = shadowColor;
+        }
+    }
+    return shadow;
+}
+
 vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
     // Bump mapping from paper: Bump Mapping Unparametrized Surfaces on the GPU
     float bump = 0.4;
@@ -42,19 +59,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 viewDir = normalize(cameraPosition - fragWorldSpace);
 
     //shadow - 0 if in shadow, 1 if it is not
-    float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
-    float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
-    vec3 shadowColor = pow(texture(shadowcolor0, shadowScreenFrag.xy).rgb, vec3(2.2));
-
-    vec3 shadow = vec3(1.0);
-
-    if(isInShadow == 0.0) {
-        if(isInNonColoredShadow == 0.0) {
-            shadow = vec3(0.0);
-        } else { //if fragment is in colored shadow
-            shadow = shadowColor;
-        }
-    }
+    vec3 shadow = getShadow(shadowScreenFrag);
 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
     float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);
