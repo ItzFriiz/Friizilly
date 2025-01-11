@@ -7,6 +7,12 @@ mat3 tbnNormalTangent(vec3 normal, vec3 tangent) {
     return mat3(tangent, bitangent, normal);
 }
 
+vec4 getNoise(vec2 coord){
+  ivec2 screenCoord = ivec2(coord * vec2(viewWidth, viewHeight)); // exact pixel coordinate onscreen
+  ivec2 noiseCoord = screenCoord % 64; // wrap to range of noiseTextureResolution
+  return texelFetch(noisetex, noiseCoord, 0);
+}
+
 vec3 getShadow(vec3 shadowScreenFrag) {
     float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
     float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
@@ -27,13 +33,20 @@ vec3 getShadow(vec3 shadowScreenFrag) {
 vec3 getSoftShadow(vec4 shadowClipFrag) {
     const float range = SHADOW_SOFTNESS / 2; // how far away from the original position we take our samples from
     const float increment = range / SHADOW_QUALITY; // distance between each sample
+    float noise = getNoise(texCoord).r;
+
+  float theta = noise * radians(360.0); // random angle using noise value
+  float cosTheta = cos(theta);
+  float sinTheta = sin(theta);
+
+  mat2 rotation = mat2(cosTheta, -sinTheta, sinTheta, cosTheta); // matrix to rotate the offset around the original position by the angle
 
     vec3 shadowAccum = vec3(0.0); // sum of all shadow samples
     int samples = 0;
 
     for(float x = -range; x <= range; x += increment) {
         for (float y = -range; y <= range; y+= increment) {
-            vec2 offset = vec2(x, y) / shadowMapResolution; // we divide by the resolution so our offset is in terms of pixels
+            vec2 offset = rotation * vec2(x, y) / shadowMapResolution; // we divide by the resolution so our offset is in terms of pixels
             vec4 offsetShadowClipPos = shadowClipFrag + vec4(offset, 0.0, 0.0); // add offset
             offsetShadowClipPos.z -= 0.001; // apply bias
             offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz); // apply distortion

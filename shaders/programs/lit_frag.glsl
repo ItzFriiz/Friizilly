@@ -9,6 +9,7 @@ uniform sampler2D depthtex0;
 uniform sampler2D shadowtex0;   // colored shadow
 uniform sampler2D shadowtex1;   // non colored shadow
 uniform sampler2D shadowcolor0; // shadow color
+uniform sampler2D noisetex;
 
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 modelViewMatrixInverse;
