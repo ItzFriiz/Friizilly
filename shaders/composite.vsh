@@ -13,9 +13,7 @@ uniform vec3 chunkOffset;
 out vec2 texCoord;
 
 void main() {
-
     texCoord = vaUV0;
-
     vec4 viewSpacePositionVec4 = modelViewMatrix * vec4(vaPosition+chunkOffset,1);
     
     gl_Position = projectionMatrix * viewSpacePositionVec4;

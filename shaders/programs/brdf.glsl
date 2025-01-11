@@ -1,9 +1,6 @@
 vec3 brdf(vec3 lightDir, vec3 viewDir, float roughness, vec3 normal, vec3 albedo, float metallic, vec3 reflectance, bool diffuseOnly, bool reflectionPass) {
     //for ease of use
-    // Adjusting parameters to increase specular highlights
-    roughness = max(roughness * 0.5, 0.01); // Decrease roughness
-    reflectance = min(reflectance * 1.5, vec3(1.0)); // Increase reflectance
-    float alpha = pow(roughness, 2);
+    float alpha = pow(roughness,2);
 
     vec3 H = normalize(lightDir + viewDir);
     

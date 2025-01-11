@@ -15,7 +15,7 @@ vec4 getNoise(vec2 coord){
 
 vec3 getShadow(vec3 shadowScreenFrag) {
     float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
-    float isInNonColoredShadow = step(shadowScreenFrag.z - .001, texture(shadowtex1, shadowScreenFrag.xy).r);
+    float isInNonColoredShadow = step(shadowScreenFrag.z, texture(shadowtex1, shadowScreenFrag.xy).r);
     vec3 shadowColor = pow(texture(shadowcolor0, shadowScreenFrag.xy).rgb, vec3(2.2));
 
     vec3 shadow = vec3(1.0);
@@ -62,7 +62,7 @@ vec3 getSoftShadow(vec4 shadowClipFrag) {
 
 vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
     // Bump mapping from paper: Bump Mapping Unparametrized Surfaces on the GPU
-    float bump = 0.4;
+    float bump = 0.7;
     return worldGeoNormal * (1. - bump) + worldNormal * bump;
 }
 
@@ -102,7 +102,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     float smoothness = 1 - roughness;
 
     //space conversion
-    vec3 adjustedFeetPlayerFrag = feetPlayerFrag + .03 * worldNormal;    // tiny offset to prevent shadow acne
+    vec3 adjustedFeetPlayerFrag = feetPlayerFrag + worldGeoNormal * .03;    // tiny offset to prevent shadow acne
     vec3 shadowViewFrag = (shadowModelView * vec4(adjustedFeetPlayerFrag, 1.0)).xyz;
     vec4 shadowClipFrag = shadowProjection * vec4(shadowViewFrag, 1.0);
 
@@ -120,12 +120,12 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
 
     // sun light
     vec3 sunLightColor = getSunLightColor(worldTime);
-    vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldNormal), 0.0, 1.0) * skyLight;
+    vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldGeoNormal), 0.0, 1.0) * skyLight;
     
     //ambient lighting
-    vec3 ambientLightDir = worldNormal;
+    vec3 ambientLightDir = worldGeoNormal;
     vec3 blockLight = pow(texture(lightmap, vec2(lightMapCoords.x, 1.0 / 32.0)).rgb, vec3(2.2));
-    vec3 ambientLight = (blockLight + skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false);
+    vec3 ambientLight = (blockLight + .2 * skyLight) * brdf(ambientLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, true, false);
 
     //brdf
     vec3 outputColor;

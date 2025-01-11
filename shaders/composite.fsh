@@ -91,17 +91,17 @@ void main() {
     mat4 customGbufferProjection = perspectiveProjection(fov, aspectRatio, dhNearPlane, dhFarPlane);
     mat4 customGbufferProjectionInverse = inverse(customGbufferProjection);
     bool isFragDH = depth == 1.0;
-    vec3 screenFrag = mix(vec3(texCoord, depth),vec3(texCoord, dhDepth), float(isFragDH));
+    vec3 screenFrag = mix(vec3(texCoord, depth), vec3(texCoord, dhDepth), float(isFragDH));
     vec3 ndcFrag = screenFrag * 2.0 - 1.0;
     vec4 clipFrag = mix(gbufferProjectionInverse * vec4(ndcFrag, 1.0),customGbufferProjectionInverse * vec4(ndcFrag, 1.0), float(isFragDH));
     #else
-    vec3 screenFrag = vec3(texCoord,depth);
+    vec3 screenFrag = vec3(texCoord, depth);
     vec3 ndcFrag = screenFrag * 2.0 - 1.0;
     vec4 clipFrag = gbufferProjectionInverse * vec4(ndcFrag, 1.0);
     #endif
     vec3 viewFrag = clipFrag.xyz / clipFrag.w;
 
-    float distanceFromCamera = distance(viewFrag, vec3(0));
+    float distanceFromCamera = distance(viewFrag, vec3(0.));
 
     float maxFogDistance = 2000;
     float minFogDistance = 1500;
@@ -111,7 +111,7 @@ void main() {
     // material
     float perceptualSmoothness = specularData.r;
     float metallic = 0.0;
-    vec3 reflectance = vec3(0);
+    vec3 reflectance = vec3(0.);
     if (specularData.g * 255 > 229) {
         metallic = 1.0;
         reflectance = albedo;
@@ -123,12 +123,12 @@ void main() {
 
     vec3 reflectionColor = vec3(0.);
     // add reflections
-    if((roughness < .2 && screenFrag.z != 1.0)) {
+    if ((roughness < .2 && screenFrag.z != 1.0)) {
         vec3 viewDir = normalize(viewFrag);
         vec3 reflectionDir = reflect(viewDir, viewNormal);
 
         Ray ray;
-        ray.origin = viewFrag;
+        ray.origin = viewFrag + viewNormal * mix(0.01, 1.5, smoothstep(0, far, distanceFromCamera));
         ray.direction = reflectionDir;
 
         reflectionColor = skyLight * pow(calcSkyColor(ray.direction), vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);
@@ -136,7 +136,7 @@ void main() {
         vec3 curPos = ray.origin;
         // ray march
         for (int i = 0; i < 1000; i++) {
-            float stepSize = mix(.02, 5.0, smoothstep(100.0, 1000.0, float(i)));
+            float stepSize = mix(.02, 5.0, smoothstep(100.0, 1000.0, float(i))); // adaptive step size, smaller steps for closer objects
             curPos += ray.direction * stepSize;
             
             #ifdef DISTANT_HORIZONS
@@ -168,13 +168,13 @@ void main() {
             #endif
 
             if (rayDepthLinear > mixDepthLinear && abs(rayDepthLinear - mixDepthLinear) < stepSize * 4) {
-                reflectionColor = pow(texture(colortex0,curClipPos.xy).rgb, vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);
+                reflectionColor = pow(texture(colortex0,curScreenPos.xy).rgb, vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);
                 break;
             }
         }
     }
 
-    vec3 outputColor = inColor + mix(reflectionColor, vec3(0), pow(roughness,.1));
+    vec3 outputColor = inColor + mix(reflectionColor, vec3(0), pow(roughness, .1));
     #ifdef DISTANT_HORIZONS
     if (dhDepth < 1.0) {
         outputColor = mix(outputColor, pow(fogColor, vec3(2.2)), fogBlendValue);
