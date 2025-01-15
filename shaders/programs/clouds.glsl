@@ -20,7 +20,7 @@ float cloudDensity(sampler2D noisetex, vec3 pos) {
 	noise += texture2D(noisetex, coord * 3.5).x / 3.5;  // 叠加不同频率的噪声
 	noise += texture2D(noisetex, coord * 12.25).x / 12.25;
 	noise += texture2D(noisetex, coord * 42.87).x / 42.87;	
-	noise /= 1.4472;    // normalize
+	noise /= 1.4472;    // normalize, 1+1/3.5+1/12.25+1/42.87=1.4472
     noise *= weight;
 
     // 截断，消除稀薄部分
