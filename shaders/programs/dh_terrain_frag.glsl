@@ -9,7 +9,6 @@ uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
 uniform sampler2D specular;
 uniform sampler2D normals;
-uniform sampler2D noisetex;
 
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowProjection;
@@ -25,7 +24,6 @@ uniform vec3 fogColor;
 uniform vec3 shadowLightPosition;
 uniform vec3 cameraPosition;
 uniform int renderStage;
-uniform int worldTime;
 
 //vertexToFragment
 in vec4 blockColor;
@@ -39,7 +37,7 @@ flat in int dh_MaterialId;
 layout(location = 0) out vec4 outColor0; //colortex0 - outcolor
 layout(location = 1) out vec4 outColor1; //colortex1 - specular
 layout(location = 2) out vec4 outColor2; //colortex2 - normal
-layout(location = 3) out vec4 outColor4; //colortex4 - skyLight
+layout(location = 3) out vec4 outColor4; //colortex3 - skyLight
 
 //functions
 float linearizeDepth(float depth, float near, float far) {

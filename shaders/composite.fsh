@@ -1,6 +1,7 @@
 #version 460
 
 const bool colortex0MipmapEnabled = true;
+const int noiseTextureResolution = 32;     // 噪声图分辨率
 
 //uniforms
 uniform sampler2D colortex0; //inColor
@@ -8,10 +9,13 @@ uniform sampler2D colortex1; //specular
 uniform sampler2D colortex2; //normals
 uniform sampler2D colortex3; //albedo
 uniform sampler2D colortex4; //skyLight
+uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
 #ifdef DISTANT_HORIZONS
 uniform sampler2D dhDepthTex0;
 #endif
+
+uniform int worldTime;
 
 uniform float near;
 uniform float far;
@@ -24,14 +28,21 @@ uniform float aspectRatio;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
 
+uniform vec3 sunPosition;
+uniform vec3 moonPosition;
+uniform vec3 cameraPosition;
+
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjection;
 
 in vec2 texCoord;
+flat in int isNight;
 
+/* DRAWBUFFERS:01 */
 layout(location = 0) out vec4 outColor0;
+layout(location = 1) out vec4 outColor1;
 
 struct Ray {
     vec3 origin;
@@ -68,6 +79,7 @@ mat4 perspectiveProjection(float fov, float aspect, float near, float far) {
 }
 
 #include "/programs/brdf.glsl"
+#include "/programs/clouds.glsl"
 
 void main() {
     vec4 inputColorData = texture(colortex0, texCoord);
@@ -104,7 +116,7 @@ void main() {
     float distanceFromCamera = distance(viewFrag, vec3(0.));
 
     float maxFogDistance = 2000;
-    float minFogDistance = 1500;
+    float minFogDistance = 1300;
 
     float fogBlendValue = clamp((distanceFromCamera - minFogDistance) / (maxFogDistance - minFogDistance), 0, 1);
 
@@ -174,6 +186,26 @@ void main() {
         }
     }
 
+        // 体积云
+    vec4 cloud = vec4(1);
+    if(texCoord.s < 0.5 && texCoord.t < 0.5) {
+        // 用 1/4 屏幕坐标重投影到完整屏幕
+        vec2 tc14 = texCoord.st * 2;
+        float depth2 = texture2D(depthtex0, tc14).x;
+        vec4 ndcPos2 = vec4(tc14 * 2 - 1, depth2 * 2 - 1, 1);
+        vec4 clipPos2 = gbufferProjectionInverse * ndcPos2;
+        vec4 viewPos2 = vec4(clipPos2.xyz / clipPos2.w, 1.0);
+        vec4 worldPos2 = gbufferModelViewInverse * viewPos2;
+
+        vec3 sunPos = (gbufferModelViewInverse * vec4(sunPosition, 0)).xyz + cameraPosition;
+        vec3 moonPos = (gbufferModelViewInverse * vec4(moonPosition, 0)).xyz + cameraPosition;
+        vec3 sun = bool(isNight) ? moonPos : sunPos;    // 光源位置 -- 世界坐标
+        vec3 worldPos = worldPos2.xyz + cameraPosition;
+        vec3 ndcPos = ndcPos2.xyz;
+        vec3 sunColor = vec3(1.051, 0.985, 0.940);
+        cloud = volumeCloud(worldPos, cameraPosition, sun, noisetex, sunColor);
+    }
+
     vec3 outputColor = inColor + mix(reflectionColor, vec3(0), pow(roughness, .1));
     #ifdef DISTANT_HORIZONS
     if (dhDepth < 1.0) {
@@ -185,6 +217,6 @@ void main() {
     }
     #endif
 
-
     outColor0 = pow(vec4(outputColor, transparency), vec4(1 / 2.2));
+    outColor1 = cloud;
 }
