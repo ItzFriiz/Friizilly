@@ -115,8 +115,8 @@ void main() {
 
     float distanceFromCamera = distance(viewFrag, vec3(0.));
 
-    float maxFogDistance = 2000;
-    float minFogDistance = 1300;
+    float maxFogDistance = 1700;
+    float minFogDistance = 900;
 
     float fogBlendValue = clamp((distanceFromCamera - minFogDistance) / (maxFogDistance - minFogDistance), 0, 1);
 
