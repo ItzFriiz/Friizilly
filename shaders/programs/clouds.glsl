@@ -12,7 +12,6 @@ float cloudDensity(sampler2D noisetex, vec3 pos) {
     float h = CLOUD_MAX_H - CLOUD_MIN_H;
     float weight = 1.0 - 2.0 * abs(mid - pos.y) / h;    // 高度越靠近中间，weight越高
     weight = pow(weight, 0.5);  // smooth
-    //weight *= texture2D(noisetex, vec2(pos.y, pos.y*1.34)).x * 0.4 + 0.8;
 
     // 采样噪声图
     vec2 coord = pos.xz * 0.00125;  // 缩小坐标，增加细节

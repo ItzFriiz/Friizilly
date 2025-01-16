@@ -1,9 +1,9 @@
 #version 460
 
 //attributes
-in vec3 vaPosition;
-in vec2 vaUV0;
-in vec4 vaColor;
+in vec3 vaPosition; // 在shadow.vsh中，相对太阳；在gbuffers_whatever.vsh中，相对玩家
+in vec2 vaUV0;  // 纹理坐标
+in vec4 vaColor;    // 纹理坐标对应的颜色
 
 //uniforms
 uniform mat4 modelViewMatrix;

@@ -69,16 +69,16 @@ vec3 getShadow(vec3 shadowScreenFrag) {
 vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 worldGeoNormal, vec3 skyLight, vec3 feetPlayerFrag, vec3 fragWorldSpace) {
     //material data
     vec4 specularData = texture(specular, texCoord);
-    float perceptualSmoothness = specularData.r;
+    float perceptualSmoothness = specularData.r;    // 感知光滑度
     float metallic = 0.0;
     vec3 reflectance = vec3(0);
-    if (specularData.g * 255 > 229) {
+    if (specularData.g * 255 > 229) {   // 若为金属
         metallic = 1.0;
-        reflectance = albedo;
+        reflectance = albedo;   // 金属的反射颜色为它本身
     } else {
         reflectance = vec3(specularData.g);
     }
-    float roughness = pow(1.0 - perceptualSmoothness, 2.0);
+    float roughness = pow(1.0 - perceptualSmoothness, 2.0); // 线性化
     float smoothness = 1 - roughness;
 
     //space conversion
@@ -97,12 +97,12 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
     vec3 shadow = getShadow(shadowScreenFrag);
 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
-    float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);
+    float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);   // 根据距离淡化阴影
     shadow = mix(shadow, vec3(1.0), shadowFade);
     
     // sun light
     vec3 sunLightColor = vec3(1.051, 0.985, 0.940);
-    vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldGeoNormal), 0.0, 1.0) * skyLight;
+    vec3 sunLight = sunLightColor * clamp(dot(shadowLightDir, worldNormal), 0.0, 1.0) * skyLight;
 
     //ambient lighting
     vec3 ambientLightDir = worldNormal;
@@ -111,7 +111,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
 
     //brdf
     vec3 outputColor;
-    if (renderStage == MC_RENDER_STAGE_PARTICLES) {
+    if (renderStage == MC_RENDER_STAGE_PARTICLES) { // 粒子渲染
         outputColor = ambientLight + skyLight * albedo;
     } else {
         outputColor = ambientLight * 0.5 + 1.5 * sunLight * shadow * brdf(shadowLightDir, viewDir, roughness, worldNormal, albedo, metallic, reflectance, false, false);

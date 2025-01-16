@@ -2,8 +2,8 @@
 
 //uniforms
 uniform sampler2D lightmap;
-uniform sampler2D depthtex0;
-uniform sampler2D dhDepthTex0;
+uniform sampler2D depthtex0;    // 深度纹理，0表示最近，1表示最远
+uniform sampler2D dhDepthTex0;  // Distant Horizons的深度纹理
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
@@ -14,16 +14,16 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
 
-uniform float viewHeight;
-uniform float viewWidth;
-uniform float near;
-uniform float far;
-uniform float dhNearPlane;
+uniform float viewHeight;   // 窗口高度
+uniform float viewWidth;    // 窗口宽度
+uniform float near; // 近平面
+uniform float far;  // 远平面
+uniform float dhNearPlane;  // Distant Horizons近平面
 uniform float dhFarPlane;
 uniform vec3 fogColor;
-uniform vec3 shadowLightPosition;
+uniform vec3 shadowLightPosition;   // 光照方向
 uniform vec3 cameraPosition;
-uniform int renderStage;
+uniform int renderStage;    // 渲染阶段
 
 //vertexToFragment
 in vec4 blockColor;
@@ -68,12 +68,12 @@ void main() {
     vec3 outputColor = lightingCalculations(albedo, viewTangent, worldGeoNormal, worldGeoNormal, skyLight, feetPlayerFrag, worldFrag);
     
     //depth testing
-    vec2 texCoord = gl_FragCoord.xy / vec2(viewWidth, viewHeight);
+    vec2 texCoord = gl_FragCoord.xy / vec2(viewWidth, viewHeight);  // 像素坐标归一化到[0,1]
     float depth = texture(depthtex0, texCoord).r;
     float dhDepth = gl_FragCoord.z;
     float depthLinear = linearizeDepth(depth, near, far * 4);
     float dhDepthLinear = linearizeDepth(dhDepth, dhNearPlane, dhFarPlane);
-    if (depthLinear < dhDepthLinear && depth != 1) {
+    if (depthLinear < dhDepthLinear && depth != 1) {    // 若物体在Distant Horizons物体前面且不是天空
         discard;
     }
 

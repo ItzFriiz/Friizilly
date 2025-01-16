@@ -15,7 +15,7 @@ uniform sampler2D depthtex0;
 uniform sampler2D dhDepthTex0;
 #endif
 
-uniform int worldTime;
+uniform int worldTime;  // 世界游戏刻
 
 uniform float near;
 uniform float far;
@@ -49,12 +49,12 @@ struct Ray {
     vec3 direction;
 };
 
-float fogify(float x, float w) {
+float fogify(float x, float w) {    // 迷雾混合因子
 	return w / (x * x + w);
 }
 
-vec3 calcSkyColor(vec3 pos) {
-	float upDot = dot(pos, gbufferModelView[1].xyz); // not much, what's up with you?
+vec3 calcSkyColor(vec3 pos) {   // 考虑迷雾影响，计算天空颜色
+	float upDot = dot(pos, gbufferModelView[1].xyz);
 	return mix(skyColor, fogColor, fogify(max(upDot, 0.0), 0.25));
 }
 
@@ -140,10 +140,10 @@ void main() {
         vec3 reflectionDir = reflect(viewDir, viewNormal);
 
         Ray ray;
-        ray.origin = viewFrag + viewNormal * mix(0.01, 1.5, smoothstep(0, far, distanceFromCamera));
+        ray.origin = viewFrag + viewNormal * mix(0.01, 1.5, smoothstep(0, far, distanceFromCamera));    // 光线起点，略微偏离表面，避免从表面内部开始计算导致自相交问题
         ray.direction = reflectionDir;
 
-        reflectionColor = skyLight * pow(calcSkyColor(ray.direction), vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);
+        reflectionColor = skyLight * pow(calcSkyColor(ray.direction), vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);    // 没有其他物体遮挡的情况下使用天空光照
 
         vec3 curPos = ray.origin;
         // ray march
@@ -155,14 +155,14 @@ void main() {
             bool isDH = distance(curPos, vec3(0)) > far;
             vec4 curClipPos = mix(gbufferProjection * vec4(curPos, 1.0), customGbufferProjection * vec4(curPos, 1.0), float(isDH));
             #else
-            vec4 curClipPos = gbufferProjection * vec4(curPos, 1.0);
+            vec4 curClipPos = gbufferProjection * vec4(curPos, 1.0);    // 将当前光线位置投影到屏幕空间，从而与深度进行比较
             #endif
 
             vec3 curNDCPos = curClipPos.xyz / curClipPos.w;
             vec3 curScreenPos = curNDCPos * 0.5 + 0.5;
 
             if (curScreenPos.x > 1.0 || curScreenPos.x < 0.0 || curScreenPos.y > 1.0 || curScreenPos.y < 0.0) {
-                break;
+                break;  // 光线射到屏幕之外，终止行进
             }
 
             float curDepth = texture(depthtex0, curScreenPos.xy).r;
@@ -179,14 +179,14 @@ void main() {
             float rayDepthLinear = linearizeDepth(curScreenPos.z, near, far * 4);
             #endif
 
-            if (rayDepthLinear > mixDepthLinear && abs(rayDepthLinear - mixDepthLinear) < stepSize * 4) {
-                reflectionColor = pow(texture(colortex0,curScreenPos.xy).rgb, vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);
+            if (rayDepthLinear > mixDepthLinear && abs(rayDepthLinear - mixDepthLinear) < stepSize * 4) {   // 判断当前光线深度是否命中表面
+                reflectionColor = pow(texture(colortex0,curScreenPos.xy).rgb, vec3(2.2)) * brdf(ray.direction, -viewDir, roughness, viewNormal, albedo, metallic, reflectance, false, true);    // 如果命中，采样屏幕上的颜色纹理
                 break;
             }
         }
     }
 
-        // 体积云
+    // 体积云
     vec4 cloud = vec4(1);
     if(texCoord.s < 0.5 && texCoord.t < 0.5) {
         // 用 1/4 屏幕坐标重投影到完整屏幕
@@ -209,7 +209,7 @@ void main() {
     vec3 outputColor = inColor + mix(reflectionColor, vec3(0), pow(roughness, .1));
     #ifdef DISTANT_HORIZONS
     if (dhDepth < 1.0) {
-        outputColor = mix(outputColor, pow(fogColor, vec3(2.2)), fogBlendValue);
+        outputColor = mix(outputColor, pow(fogColor, vec3(2.2)), fogBlendValue);    // 迷雾混合
     }
     #else
     if (depth < 1.0) {

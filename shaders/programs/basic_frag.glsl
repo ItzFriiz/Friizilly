@@ -1,5 +1,5 @@
 //uniforms
-uniform sampler2D gtexture;
+uniform sampler2D gtexture; // 纹理坐标图
 
 //vertexToFragment
 in vec2 texCoord;
@@ -12,7 +12,7 @@ void main() {
 
     //input color
     vec4 outputColorData = texture(gtexture, texCoord);
-    vec3 albedo = pow(outputColorData.rgb, vec3(2.2)) * pow(foliageColor, vec3(2.2));
+    vec3 albedo = pow(outputColorData.rgb, vec3(2.2)) * pow(foliageColor, vec3(2.2));   // 2.2为Gamma校正因子
     float transparency = outputColorData.a;
 
     if (transparency < .1) {
@@ -20,5 +20,5 @@ void main() {
     }
 
     //output color
-    outColor0 = vec4(pow(albedo, vec3(1 / 2.2)), transparency);
+    outColor0 = vec4(pow(albedo, vec3(1 / 2.2)), transparency); // 在shadow.fsh中，对应shadowcolor0，即阴影颜色
 }
