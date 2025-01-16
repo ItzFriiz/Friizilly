@@ -13,12 +13,6 @@ vec3 updateWorldNormal(vec3 worldNormal, vec3 worldGeoNormal) {
     return worldGeoNormal * (1. - bump) + worldNormal * bump;
 }
 
-// vec4 getNoise(vec2 coord) {
-//     ivec2 screenCoord = ivec2(coord * vec2(viewWidth, viewHeight)); // exact pixel coordinate onscreen
-//     ivec2 noiseCoord = screenCoord % 64; // wrap to range of noiseTextureResolution
-//     return texelFetch(noisetex, noiseCoord, 0);
-// }
-
 vec3 getShadow(vec3 shadowScreenFrag) {
     float isInShadow = step(shadowScreenFrag.z, texture(shadowtex0, shadowScreenFrag.xy).r);
     float isInNonColoredShadow = step(shadowScreenFrag.z, texture(shadowtex1, shadowScreenFrag.xy).r);
@@ -34,6 +28,12 @@ vec3 getShadow(vec3 shadowScreenFrag) {
         }
     }
     return shadow;
+}
+
+vec4 getNoise(vec2 coord) {
+    ivec2 screenCoord = ivec2(coord * vec2(viewWidth, viewHeight)); // exact pixel coordinate onscreen
+    ivec2 noiseCoord = screenCoord % 64; // wrap to range of noiseTextureResolution
+    return texelFetch(noisetex, noiseCoord, 0);
 }
 
 // vec3 getSoftShadow(vec4 shadowClipFrag) {
@@ -95,6 +95,7 @@ vec3 lightingCalculations(vec3 albedo, vec3 viewTangent, vec3 worldNormal, vec3 
 
     //shadow
     vec3 shadow = getShadow(shadowScreenFrag);
+    // vec3 shadow = getSoftShadow(homogeneousFrag);
 
     float distanceFromPlayer = distance(feetPlayerFrag, vec3(0));
     float shadowFade = clamp(smoothstep(100, 150, distanceFromPlayer), 0.0, 1.0);   // 根据距离淡化阴影
